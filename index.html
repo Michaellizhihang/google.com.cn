@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google 搜索模拟器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --google-blue: #4285f4;
+            --google-red: #ea4335;
+            --google-yellow: #fbbc05;
+            --google-green: #34a853;
+            --text-primary: #202124;
+            --text-secondary: #5f6368;
+            --border-color: #dfe1e5;
+            --hover-bg: #f8f9fa;
+        }
+
+        body {
+            font-family: 'Roboto', 'Segoe UI', Arial, sans-serif;
+            background: #fff;
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        /* 首页样式 */
+        .home-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .logo {
+            font-size: 90px;
+            font-weight: 500;
+            margin-bottom: 30px;
+            letter-spacing: -3px;
+            cursor: default;
+            user-select: none;
+        }
+
+        .logo .g1 { color: var(--google-blue); }
+        .logo .o1 { color: var(--google-red); }
+        .logo .o2 { color: var(--google-yellow); }
+        .logo .g2 { color: var(--google-blue); }
+        .logo .l { color: var(--google-green); }
+        .logo .e { color: var(--google-red); }
+
+        .search-box-container {
+            width: 100%;
+            max-width: 584px;
+            position: relative;
+        }
+
+        .search-box {
+            width: 100%;
+            height: 46px;
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 0 45px 0 20px;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.2s;
+            box-shadow: none;
+        }
+
+        .search-box:hover,
+        .search-box:focus {
+            box-shadow: 0 1px 6px rgba(32,33,36,.28);
+            border-color: rgba(223,225,229,0);
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--google-blue);
+            cursor: pointer;
+        }
+
+        .buttons {
+            margin-top: 30px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            background: var(--hover-bg);
+            border: 1px solid transparent;
+            border-radius: 4px;
+            color: var(--text-primary);
+            font-size: 14px;
+            padding: 10px 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            box-shadow: 0 1px 1px rgba(0,0,0,.1);
+            border-color: #dadce0;
+            color: #202124;
+        }
+
+        .lucky-btn {
+            background: linear-gradient(45deg, #4285f4, #ea4335, #fbbc05, #34a853);
+            background-size: 300% 300%;
+            color: white;
+            animation: gradient 5s ease infinite;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* 搜索结果页 */
+        .results-page {
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid #ebebeb;
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 100;
+        }
+
+        .header-logo {
+            font-size: 24px;
+            font-weight: 500;
+            margin-right: 30px;
+            cursor: pointer;
+        }
+
+        .header-search {
+            flex: 1;
+            max-width: 692px;
+        }
+
+        .header-search-box {
+            width: 100%;
+            height: 44px;
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 0 40px 0 20px;
+            font-size: 16px;
+            outline: none;
+            box-shadow: 0 2px 5px 1px rgba(64,60,67,.16);
+        }
+
+        .header-search-box:focus {
+            box-shadow: 0 2px 8px 1px rgba(64,60,67,.24);
+        }
+
+        .tools {
+            display: flex;
+            gap: 20px;
+            margin-left: 30px;
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        .tools span {
+            cursor: pointer;
+            padding: 8px;
+        }
+
+        .tools span:hover {
+            color: var(--google-blue);
+        }
+
+        .stats-bar {
+            padding: 10px 20px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            border-bottom: 1px solid #ebebeb;
+        }
+
+        .results-container {
+            max-width: 652px;
+            margin: 20px;
+            padding: 0 8px;
+        }
+
+        .result-item {
+            margin-bottom: 30px;
+            animation: resultFadeIn 0.4s ease forwards;
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        @keyframes resultFadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-url {
+            color: #202124;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .favicon {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #f1f3f4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .result-title {
+            color: #1a0dab;
+            font-size: 20px;
+            font-weight: 400;
+            text-decoration: none;
+            display: block;
+            margin-bottom: 8px;
+            line-height: 1.3;
+            cursor: pointer;
+        }
+
+        .result-title:hover {
+            text-decoration: underline;
+        }
+
+        .result-title:visited {
+            color: #660099;
+        }
+
+        .result-desc {
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.58;
+        }
+
+        .result-date {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-right: 8px;
+        }
+
+        .related-searches {
+            margin-top: 40px;
+            padding: 20px 0;
+            border-top: 1px solid #ebebeb;
+        }
+
+        .related-title {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+        }
+
+        .related-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .related-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: var(--hover-bg);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+            color: #1a0dab;
+        }
+
+        .related-item:hover {
+            background: #e8eaed;
+        }
+
+        .related-item::before {
+            content: "🔍";
+            margin-right: 12px;
+            opacity: 0.6;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 40px 0;
+            gap: 20px;
+        }
+
+        .page-num {
+            color: #4285f4;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .page-num:hover {
+            text-decoration: underline;
+        }
+
+        .page-num.active {
+            color: black;
+            font-weight: bold;
+            cursor: default;
+            text-decoration: none;
+        }
+
+        /* 知识面板 */
+        .knowledge-panel {
+            float: right;
+            width: 372px;
+            margin: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .knowledge-title {
+            font-size: 28px;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+        }
+
+        .knowledge-subtitle {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .knowledge-img {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 48px;
+        }
+
+        .knowledge-info {
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--text-secondary);
+        }
+
+        .knowledge-info strong {
+            color: var(--text-primary);
+        }
+
+        /* 图片结果 */
+        .image-results {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+            padding: 20px;
+        }
+
+        .image-item {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            aspect-ratio: 1;
+            background: #f1f3f4;
+            transition: transform 0.2s;
+        }
+
+        .image-item:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .image-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+
+        .image-info {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255,255,255,0.95);
+            padding: 8px;
+            font-size: 12px;
+        }
+
+        /* 视频结果 */
+        .video-results {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .video-item {
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .video-item:hover {
+            transform: translateY(-4px);
+        }
+
+        .video-thumb {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: #000;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 48px;
+            position: relative;
+            margin-bottom: 10px;
+        }
+
+        .video-duration {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .video-title {
+            font-size: 16px;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .video-meta {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* 搜索建议 */
+        .suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border-radius: 0 0 24px 24px;
+            box-shadow: 0 4px 6px rgba(32,33,36,.28);
+            margin-top: -10px;
+            padding-top: 10px;
+            display: none;
+            z-index: 1000;
+            overflow: hidden;
+        }
+
+        .suggestions.active {
+            display: block;
+        }
+
+        .suggestion-item {
+            padding: 10px 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 16px;
+        }
+
+        .suggestion-item:hover {
+            background: #f1f3f4;
+        }
+
+        .suggestion-item .icon {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        /* 加载动画 */
+        .loading {
+            display: none;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+        }
+
+        .loading.active {
+            display: flex;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--google-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 标签页 */
+        .tabs {
+            display: flex;
+            gap: 20px;
+            padding: 0 20px;
+            border-bottom: 1px solid #ebebeb;
+            margin-top: 10px;
+        }
+
+        .tab {
+            padding: 12px 8px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .tab:hover {
+            color: var(--google-blue);
+        }
+
+        .tab.active {
+            color: var(--google-blue);
+            border-bottom-color: var(--google-blue);
+        }
+
+        .tab-icon {
+            font-size: 16px;
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .knowledge-panel {
+                float: none;
+                width: auto;
+                margin: 20px;
+            }
+            
+            .results-container {
+                max-width: 100%;
+            }
+            
+            .related-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* 特色片段 */
+        .featured-snippet {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border: 1px solid #dfe1e5;
+        }
+
+        .featured-title {
+            font-size: 20px;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+        }
+
+        .featured-content {
+            font-size: 16px;
+            line-height: 1.6;
+            color: var(--text-secondary);
+        }
+
+        .featured-source {
+            margin-top: 12px;
+            color: #1a0dab;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 首页 -->
+    <div class="home-container" id="homePage">
+        <div class="logo">
+            <span class="g1">G</span><span class="o1">o</span><span class="o2">o</span><span class="g2">g</span><span class="l">l</span><span class="e">e</span>
+        </div>
+        <div class="search-box-container">
+            <input type="text" class="search-box" id="homeSearchBox" placeholder="在 Google 上搜索，或者输入一个网址" autocomplete="off">
+            <svg class="search-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.35-4.35"></path>
+            </svg>
+            <div class="suggestions" id="homeSuggestions"></div>
+        </div>
+        <div class="buttons">
+            <button class="btn" onclick="performSearch()">Google 搜索</button>
+            <button class="btn lucky-btn" onclick="feelingLucky()">手气不错</button>
+        </div>
+    </div>
+
+    <!-- 搜索结果页 -->
+    <div class="results-page" id="resultsPage">
+        <div class="header">
+            <div class="header-logo" onclick="goHome()">
+                <span style="color: #4285f4">G</span><span style="color: #ea4335">o</span><span style="color: #fbbc05">o</span><span style="color: #4285f4">g</span><span style="color: #34a853">l</span><span style="color: #ea4335">e</span>
+            </div>
+            <div class="header-search">
+                <input type="text" class="header-search-box" id="headerSearchBox" autocomplete="off">
+            </div>
+            <div class="tools">
+                <span>⚙️ 设置</span>
+                <span>🛠️ 工具</span>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('all')">
+                <span class="tab-icon">🔍</span> 全部
+            </div>
+            <div class="tab" onclick="switchTab('images')">
+                <span class="tab-icon">🖼️</span> 图片
+            </div>
+            <div class="tab" onclick="switchTab('videos')">
+                <span class="tab-icon">▶️</span> 视频
+            </div>
+            <div class="tab" onclick="switchTab('news')">
+                <span class="tab-icon">📰</span> 新闻
+            </div>
+            <div class="tab" onclick="switchTab('maps')">
+                <span class="tab-icon">🗺️</span> 地图
+            </div>
+            <div class="tab" onclick="switchTab('shopping')">
+                <span class="tab-icon">🛍️</span> 购物
+            </div>
+        </div>
+
+        <div class="stats-bar" id="statsBar">找到约 12,400,000 条结果 （0.32 秒）</div>
+
+        <div style="display: flex; max-width: 1200px; margin: 0 auto;">
+            <div class="results-container" id="resultsContainer">
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                </div>
+                <div id="resultsContent"></div>
+                
+                <div class="related-searches" id="relatedSearches" style="display: none;">
+                    <div class="related-title">相关搜索</div>
+                    <div class="related-grid" id="relatedGrid"></div>
+                </div>
+
+                <div class="pagination" id="pagination" style="display: none;">
+                    <span class="page-num active">1</span>
+                    <span class="page-num" onclick="changePage(2)">2</span>
+                    <span class="page-num" onclick="changePage(3)">3</span>
+                    <span class="page-num" onclick="changePage(4)">4</span>
+                    <span class="page-num" onclick="changePage(5)">5</span>
+                    <span style="color: #4285f4; cursor: pointer;">下一页 &gt;</span>
+                </div>
+            </div>
+
+            <div class="knowledge-panel" id="knowledgePanel" style="display: none;">
+                <div class="knowledge-title" id="knowledgeTitle"></div>
+                <div class="knowledge-subtitle" id="knowledgeSubtitle"></div>
+                <div class="knowledge-img" id="knowledgeImg">📚</div>
+                <div class="knowledge-info" id="knowledgeInfo"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 海量本地数据模拟
+        const database = {
+            tech: {
+                keywords: ['javascript', 'python', 'react', 'vue', 'angular', 'nodejs', 'docker', 'kubernetes', 'aws', 'azure', 'github', 'stackoverflow', 'mdn', 'w3schools', 'codecademy'],
+                sites: [
+                    { name: 'MDN Web Docs', domain: 'developer.mozilla.org', desc: 'Mozilla 开发者网络提供有关开放 Web 技术的信息，包括 HTML、CSS 和 JavaScript。' },
+                    { name: 'Stack Overflow', domain: 'stackoverflow.com', desc: 'Stack Overflow 是一个面向专业程序员和编程爱好者的问答网站。' },
+                    { name: 'GitHub', domain: 'github.com', desc: 'GitHub 是一个面向开源及私有软件项目的托管平台。' },
+                    { name: 'W3Schools', domain: 'w3schools.com', desc: 'W3Schools 提供免费的 Web 开发教程。' },
+                    { name: 'GeeksforGeeks', domain: 'geeksforgeeks.org', desc: '一个面向计算机科学学生的计算机科学门户网站。' }
+                ]
+            },
+            social: {
+                keywords: ['facebook', 'twitter', 'instagram', 'linkedin', 'youtube', 'tiktok', 'snapchat', 'pinterest', 'reddit', 'whatsapp', 'telegram', 'discord', 'twitch'],
+                sites: [
+                    { name: 'YouTube', domain: 'youtube.com', desc: '享受您喜爱的视频和音乐，上传原创内容，并在 YouTube 上与朋友分享。' },
+                    { name: 'Twitter', domain: 'twitter.com', desc: 'Twitter 是一个社交网络和微博客服务。' },
+                    { name: 'Instagram', domain: 'instagram.com', desc: '创建账号或登录 Instagram - 分享照片和视频的最简单方式。' },
+                    { name: 'LinkedIn', domain: 'linkedin.com', desc: 'LinkedIn 是一个面向商业的社交网络服务。' },
+                    { name: 'Reddit', domain: 'reddit.com', desc: 'Reddit 是一个社交新闻聚合、网页内容评分和讨论网站。' }
+                ]
+            },
+            shopping: {
+                keywords: ['amazon', '淘宝', '京东', '天猫', 'ebay', 'alibaba', 'walmart', 'target', 'best buy', 'apple store', '小米', '华为', 'iphone', 'samsung', 'nike', 'adidas'],
+                sites: [
+                    { name: 'Amazon', domain: 'amazon.com', desc: '亚马逊是一家美国跨国技术公司，专注于电子商务、云计算、在线广告等。' },
+                    { name: '淘宝', domain: 'taobao.com', desc: '淘宝网是中国最大的在线购物平台。' },
+                    { name: '京东', domain: 'jd.com', desc: '京东是中国最大的自营式电商企业。' },
+                    { name: 'eBay', domain: 'ebay.com', desc: 'eBay 是一个在线拍卖和购物网站。' },
+                    { name: '天猫', domain: 'tmall.com', desc: '天猫是阿里巴巴集团旗下的 B2C 在线零售平台。' }
+                ]
+            },
+            news: {
+                keywords: ['bbc', 'cnn', '纽约时报', '路透社', '彭博社', '华尔街日报', '新华社', '人民日报', 'techcrunch', 'the verge', 'engadget', 'wired'],
+                sites: [
+                    { name: 'BBC News', domain: 'bbc.com', desc: 'BBC 新闻提供最新的国际新闻、评论和分析。' },
+                    { name: 'CNN', domain: 'cnn.com', desc: 'CNN 提供最新的新闻和信息。' },
+                    { name: '纽约时报', domain: 'nytimes.com', desc: '纽约时报是一家美国报纸，总部位于纽约市。' },
+                    { name: 'TechCrunch', domain: 'techcrunch.com', desc: 'TechCrunch 报道初创公司、互联网产品和技术新闻。' },
+                    { name: 'The Verge', domain: 'theverge.com', desc: 'The Verge 涵盖科技、科学、艺术和文化的新闻。' }
+                ]
+            },
+            entertainment: {
+                keywords: ['netflix', 'spotify', 'steam', 'epic games', 'playstation', 'xbox', 'nintendo', 'disney+', 'hbo', 'hulu', 'twitch', 'bilibili', '爱奇艺', '腾讯视频', '优酷'],
+                sites: [
+                    { name: 'Netflix', domain: 'netflix.com', desc: 'Netflix 是一家美国订阅制流媒体服务。' },
+                    { name: 'Spotify', domain: 'spotify.com', desc: 'Spotify 是一家瑞典音频流媒体服务提供商。' },
+                    { name: 'Steam', domain: 'store.steampowered.com', desc: 'Steam 是一个数字发行平台。' },
+                    { name: '哔哩哔哩', domain: 'bilibili.com', desc: '哔哩哔哩是中国领先的年轻人文化社区。' },
+                    { name: '腾讯视频', domain: 'v.qq.com', desc: '腾讯视频是中国领先的在线视频媒体平台。' }
+                ]
+            },
+            education: {
+                keywords: ['coursera', 'udemy', 'edx', 'khan academy', 'udacity', ' MIT', '斯坦福', '哈佛', '清华大学', '北京大学', 'mooc', '可汗学院', '学堂在线'],
+                sites: [
+                    { name: 'Coursera', domain: 'coursera.org', desc: 'Coursera 提供来自世界顶级大学和公司的在线课程。' },
+                    { name: 'edX', domain: 'edx.org', desc: 'edX 是一个大规模开放在线课程提供商。' },
+                    { name: 'Khan Academy', domain: 'khanacademy.org', desc: '可汗学院提供免费的世界级教育。' },
+                    { name: '学堂在线', domain: 'xuetangx.com', desc: '学堂在线是清华大学发起的慕课平台。' },
+                    { name: 'Udemy', domain: 'udemy.com', desc: 'Udemy 是一个在线学习和教学平台。' }
+                ]
+            },
+            travel: {
+                keywords: ['booking', 'airbnb', '携程', '去哪儿', '飞猪', 'tripadvisor', 'expedia', 'agoda', '马蜂窝', '穷游', 'uber', 'lyft', '滴滴', 'google maps'],
+                sites: [
+                    { name: 'Booking.com', domain: 'booking.com', desc: 'Booking.com 提供全球住宿预订服务。' },
+                    { name: 'Airbnb', domain: 'airbnb.com', desc: 'Airbnb 是一个在线市场和住宿共享平台。' },
+                    { name: '携程', domain: 'ctrip.com', desc: '携程是中国领先的在线旅行服务公司。' },
+                    { name: 'TripAdvisor', domain: 'tripadvisor.com', desc: 'TripAdvisor 提供旅行者的评论和意见。' },
+                    { name: '马蜂窝', domain: 'mafengwo.cn', desc: '马蜂窝是中国领先的旅行玩乐平台。' }
+                ]
+            },
+            finance: {
+                keywords: ['paypal', '支付宝', '微信支付', 'visa', 'mastercard', 'bitcoin', 'ethereum', 'blockchain', 'coinbase', 'binance', 'yahoo finance', 'investing', '雪球', '东方财富'],
+                sites: [
+                    { name: 'PayPal', domain: 'paypal.com', desc: 'PayPal 是一家全球在线支付系统。' },
+                    { name: '支付宝', domain: 'alipay.com', desc: '支付宝是中国领先的第三方支付平台。' },
+                    { name: 'Coinbase', domain: 'coinbase.com', desc: 'Coinbase 是一个加密货币交易平台。' },
+                    { name: 'Yahoo Finance', domain: 'finance.yahoo.com', desc: '雅虎财经提供股票报价、新闻和财务报告。' },
+                    { name: '雪球', domain: 'xueqiu.com', desc: '雪球是中国领先的投资者社区和财富管理平台。' }
+                ]
+            },
+            food: {
+                keywords: ['麦当劳', '肯德基', '星巴克', '必胜客', '海底捞', '美团', '饿了么', '大众点评', 'yelp', 'uber eats', 'doordash', 'grubhub', '菜谱', '美食'],
+                sites: [
+                    { name: '美团', domain: 'meituan.com', desc: '美团是中国领先的生活服务电子商务平台。' },
+                    { name: '饿了么', domain: 'ele.me', desc: '饿了么是中国领先的在线外卖订餐平台。' },
+                    { name: '大众点评', domain: 'dianping.com', desc: '大众点评是中国领先的本地生活信息及交易平台。' },
+                    { name: 'Yelp', domain: 'yelp.com', desc: 'Yelp 提供本地企业评论和推荐。' },
+                    { name: 'Uber Eats', domain: 'ubereats.com', desc: 'Uber Eats 是一个在线食品订购和配送平台。' }
+                ]
+            },
+            health: {
+                keywords: ['webmd', 'mayo clinic', 'healthline', '丁香园', '好大夫', '平安好医生', '微医', '健身', '减肥', '瑜伽', 'meditation', 'nike training', 'keep'],
+                sites: [
+                    { name: 'WebMD', domain: 'webmd.com', desc: 'WebMD 提供健康信息、医疗新闻和健康工具。' },
+                    { name: 'Healthline', domain: 'healthline.com', desc: 'Healthline 提供健康信息和健康建议。' },
+                    { name: '丁香园', domain: 'dxy.cn', desc: '丁香园是中国领先的医疗领域连接者。' },
+                    { name: 'Keep', domain: 'gotokeep.com', desc: 'Keep 是中国领先的移动健身工具。' },
+                    { name: 'Mayo Clinic', domain: 'mayoclinic.org', desc: '梅奥诊所提供全面的医疗信息。' }
+                ]
+            }
+        };
+
+        const knowledgeBase = {
+            'javascript': {
+                title: 'JavaScript',
+                subtitle: '编程语言',
+                info: '<strong>设计者：</strong>Brendan Eich<br><strong>首次发布：</strong>1995年12月4日<br><strong>稳定版本：</strong>ECMAScript 2023<br><br>JavaScript 是一种高级的、解释型的编程语言。它是 Web 的核心技术之一，与 HTML 和 CSS 并列。JavaScript 支持事件驱动、函数式和命令式编程风格。'
+            },
+            'python': {
+                title: 'Python',
+                subtitle: '编程语言',
+                info: '<strong>设计者：</strong>Guido van Rossum<br><strong>首次发布：</strong>1991年<br><strong>稳定版本：</strong>Python 3.12<br><br>Python 是一种高级通用编程语言。它的设计理念强调代码的可读性，使用显著的缩进。Python 是动态类型和垃圾回收的。'
+            },
+            'react': {
+                title: 'React',
+                subtitle: 'JavaScript 库',
+                info: '<strong>开发者：</strong>Meta 和社区<br><strong>首次发布：</strong>2013年5月29日<br><strong>稳定版本：</strong>18.2.0<br><br>React 是一个用于构建用户界面的免费开源前端 JavaScript 库。它由 Meta 和一个由个人开发者和公司组成的社区维护。'
+            },
+            'github': {
+                title: 'GitHub',
+                subtitle: '软件开发平台',
+                info: '<strong>成立时间：</strong>2008年<br><strong>总部：</strong>美国加利福尼亚州旧金山<br><strong>用户：</strong>超过 1 亿<br><br>GitHub 是一个面向开源及私有软件项目的托管平台，因为只支持 Git 作为唯一的版本库格式进行托管，故名 GitHub。'
+            },
+            '人工智能': {
+                title: '人工智能',
+                subtitle: '计算机科学分支',
+                info: '<strong>领域：</strong>计算机科学<br><strong>子领域：</strong>机器学习、深度学习、自然语言处理<br><br>人工智能是计算机科学的一个分支，它企图了解智能的实质，并生产出一种新的能以人类智能相似的方式做出反应的智能机器。'
+            },
+            '马云': {
+                title: '马云',
+                subtitle: '阿里巴巴集团创始人',
+                info: '<strong>出生：</strong>1964年9月10日<br><strong>出生地：</strong>中国浙江省杭州市<br><strong>净资产：</strong>约 300 亿美元<br><br>马云是中国企业家、慈善家，阿里巴巴集团主要创始人之一，曾任阿里巴巴集团董事局主席。'
+            }
+        };
+
+        const suggestions = [
+            'javascript tutorial', 'python 教程', 'react documentation', 'github login',
+            '淘宝', '京东', '美团外卖', '饿了么', '携程旅行', '去哪儿网',
+            'youtube', 'bilibili', '腾讯视频', '爱奇艺', '优酷',
+            '微信', 'qq', '钉钉', '飞书', '企业微信',
+            '百度', '搜狗', '必应', '谷歌翻译', '谷歌地图',
+            '新冠疫苗', '健康码', '核酸检测', '口罩', '消毒',
+            '股票', '基金', '比特币', '以太坊', '区块链',
+            'iphone 15', '华为 mate 60', '小米 14', 'oppo', 'vivo',
+            '特斯拉', '比亚迪', '蔚来', '小鹏', '理想',
+            '世界杯', 'nba', '英超', '西甲', '欧冠'
+        ];
+
+        let currentQuery = '';
+        let currentTab = 'all';
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            const homeSearchBox = document.getElementById('homeSearchBox');
+            const headerSearchBox = document.getElementById('headerSearchBox');
+            
+            homeSearchBox.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') performSearch();
+                updateSuggestions(e.target.value, 'home');
+            });
+            
+            homeSearchBox.addEventListener('input', (e) => {
+                updateSuggestions(e.target.value, 'home');
+            });
+
+            headerSearchBox.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') performSearch(e.target.value);
+            });
+
+            // 点击外部关闭建议
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.search-box-container')) {
+                    document.getElementById('homeSuggestions').classList.remove('active');
+                }
+            });
+        });
+
+        function updateSuggestions(value, type) {
+            const container = document.getElementById('homeSuggestions');
+            if (!value || value.length < 1) {
+                container.classList.remove('active');
+                return;
+            }
+
+            const filtered = suggestions.filter(s => 
+                s.toLowerCase().includes(value.toLowerCase())
+            ).slice(0, 5);
+
+            if (filtered.length === 0) {
+                container.classList.remove('active');
+                return;
+            }
+
+            container.innerHTML = filtered.map(s => `
+                <div class="suggestion-item" onclick="selectSuggestion('${s}')">
+                    <span class="icon">🔍</span>
+                    <span>${s}</span>
+                </div>
+            `).join('');
+            
+            container.classList.add('active');
+        }
+
+        function selectSuggestion(text) {
+            document.getElementById('homeSearchBox').value = text;
+            document.getElementById('homeSuggestions').classList.remove('active');
+            performSearch(text);
+        }
+
+        function performSearch(query) {
+            query = query || document.getElementById('homeSearchBox').value || document.getElementById('headerSearchBox').value;
+            if (!query) return;
+
+            currentQuery = query;
+            document.getElementById('homePage').style.display = 'none';
+            document.getElementById('resultsPage').style.display = 'block';
+            document.getElementById('headerSearchBox').value = query;
+
+            // 显示加载
+            document.getElementById('loading').classList.add('active');
+            document.getElementById('resultsContent').innerHTML = '';
+            document.getElementById('knowledgePanel').style.display = 'none';
+            document.getElementById('relatedSearches').style.display = 'none';
+            document.getElementById('pagination').style.display = 'none';
+
+            // 模拟网络延迟
+            setTimeout(() => {
+                generateResults(query);
+            }, 400 + Math.random() * 600);
+        }
+
+        function generateResults(query) {
+            document.getElementById('loading').classList.remove('active');
+            
+            const results = [];
+            const queryLower = query.toLowerCase();
+            
+            // 根据查询生成相关结果
+            Object.keys(database).forEach(category => {
+                const cat = database[category];
+                const isMatch = cat.keywords.some(k => queryLower.includes(k.toLowerCase()) || k.toLowerCase().includes(queryLower));
+                
+                if (isMatch || Math.random() > 0.7) {
+                    cat.sites.forEach((site, idx) => {
+                        results.push({
+                            title: `${site.name} - ${query} 相关资源`,
+                            url: `https://www.${site.domain}/search?q=${encodeURIComponent(query)}`,
+                            displayUrl: `${site.domain} › search › ${query}`,
+                            desc: `${site.desc} 查找与 "${query}" 相关的最新信息、教程和资源。更新于 ${randomDate()}。`,
+                            date: randomDate()
+                        });
+                    });
+                }
+            });
+
+            // 生成通用结果
+            for (let i = 0; i < 8; i++) {
+                const domains = ['wikipedia.org', 'zhihu.com', 'csdn.net', 'jianshu.com', 'cnblogs.com', 'segmentfault.com', 'weibo.com', 'baidu.com'];
+                const domain = domains[Math.floor(Math.random() * domains.length)];
+                results.push({
+                    title: `${query} - ${getRandomTitleSuffix()}`,
+                    url: `https://www.${domain}/${randomString(10)}`,
+                    displayUrl: `${domain} › ${randomString(5)} › ${query}`,
+                    desc: `关于 ${query} 的详细信息。${getRandomDescription()}。这里提供了全面的指南、教程和最佳实践，帮助您更好地理解和使用 ${query}。`,
+                    date: randomDate()
+                });
+            }
+
+            // 打乱并限制结果数量
+            const shuffled = results.sort(() => 0.5 - Math.random()).slice(0, 10);
+
+            // 检查是否有知识面板
+            let hasKnowledge = false;
+            Object.keys(knowledgeBase).forEach(key => {
+                if (queryLower.includes(key.toLowerCase())) {
+                    showKnowledgePanel(knowledgeBase[key]);
+                    hasKnowledge = true;
+                }
+            });
+
+            if (!hasKnowledge && Math.random() > 0.5) {
+                // 生成通用知识面板
+                showKnowledgePanel({
+                    title: query,
+                    subtitle: '搜索结果',
+                    info: `<strong>相关搜索：</strong>${query}<br><strong>类别：</strong>综合信息<br><br>这是关于 "${query}" 的搜索结果页面。Google 搜索使用自动化程序（称为爬虫）来抓取网页并建立索引，以便为您提供最相关的搜索结果。`
+                });
+            }
+
+            // 渲染结果
+            const container = document.getElementById('resultsContent');
+            
+            // 添加特色片段（随机）
+            if (Math.random() > 0.6) {
+                container.innerHTML += `
+                    <div class="featured-snippet">
+                        <div class="featured-title">${query} 简介</div>
+                        <div class="featured-content">
+                            ${query} 是一个广泛搜索的主题。根据我们的数据，大多数用户在查找 ${query} 时也在关注相关的教程、最新新闻和实用工具。
+                        </div>
+                        <div class="featured-source">来源：维基百科</div>
+                    </div>
+                `;
+            }
+
+            shuffled.forEach((result, index) => {
+                setTimeout(() => {
+                    container.innerHTML += `
+                        <div class="result-item" style="animation-delay: ${index * 0.05}s">
+                            <div class="result-url">
+                                <div class="favicon">${result.displayUrl[0].toUpperCase()}</div>
+                                <div>
+                                    <div style="font-size: 14px; color: #202124;">${result.displayUrl.split(' › ')[0]}</div>
+                                    <div style="font-size: 12px; color: #5f6368;">${result.displayUrl}</div>
+                                </div>
+                            </div>
+                            <a href="#" class="result-title" onclick="alert('跳转到: ${result.url}'); return false;">${result.title}</a>
+                            <div class="result-desc">
+                                <span class="result-date">${result.date}</span>
+                                ${result.desc}
+                            </div>
+                        </div>
+                    `;
+                }, index * 50);
+            });
+
+            // 更新统计
+            const resultCount = (Math.random() * 10000000).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+            document.getElementById('statsBar').textContent = `找到约 ${resultCount} 条结果 （${(Math.random() * 0.5 + 0.2).toFixed(2)} 秒）`;
+
+            // 显示相关搜索
+            generateRelatedSearches(query);
+            
+            // 显示分页
+            setTimeout(() => {
+                document.getElementById('pagination').style.display = 'flex';
+            }, 500);
+        }
+
+        function showKnowledgePanel(data) {
+            const panel = document.getElementById('knowledgePanel');
+            document.getElementById('knowledgeTitle').textContent = data.title;
+            document.getElementById('knowledgeSubtitle').textContent = data.subtitle;
+            document.getElementById('knowledgeInfo').innerHTML = data.info;
+            panel.style.display = 'block';
+        }
+
+        function generateRelatedSearches(query) {
+            const related = [];
+            const prefixes = ['什么是', '如何使用', '教程', '下载', '官网', 'app', '破解版', '免费', '在线', '工具'];
+            const suffixes = ['2024', '推荐', '评测', '对比', '价格', '功能', '案例', '入门', '高级', '技巧'];
+            
+            for (let i = 0; i < 8; i++) {
+                if (Math.random() > 0.5) {
+                    related.push(`${prefixes[Math.floor(Math.random() * prefixes.length)]} ${query}`);
+                } else {
+                    related.push(`${query} ${suffixes[Math.floor(Math.random() * suffixes.length)]}`);
+                }
+            }
+
+            const grid = document.getElementById('relatedGrid');
+            grid.innerHTML = related.map(r => `
+                <div class="related-item" onclick="performSearch('${r}')">${r}</div>
+            `).join('');
+            
+            document.getElementById('relatedSearches').style.display = 'block';
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.closest('.tab').classList.add('active');
+
+            const container = document.getElementById('resultsContent');
+            container.innerHTML = '';
+            document.getElementById('knowledgePanel').style.display = 'none';
+            document.getElementById('relatedSearches').style.display = 'none';
+
+            if (tab === 'images') {
+                generateImageResults();
+            } else if (tab === 'videos') {
+                generateVideoResults();
+            } else {
+                generateResults(currentQuery);
+            }
+        }
+
+        function generateImageResults() {
+            const container = document.getElementById('resultsContent');
+            let html = '<div class="image-results">';
+            
+            const emojis = ['🖼️', '📸', '🎨', '🖌️', '📷', '🎭', '🎬', '📺', '🎮', '🎯', '🎲', '🎰'];
+            for (let i = 0; i < 20; i++) {
+                html += `
+                    <div class="image-item" onclick="alert('查看大图')">
+                        <div class="image-placeholder">${emojis[i % emojis.length]}</div>
+                        <div class="image-info">
+                            <div style="font-weight: 500; margin-bottom: 4px;">${currentQuery} 图片 ${i + 1}</div>
+                            <div style="color: #5f6368;">${randomString(10)}.com</div>
+                        </div>
+                    </div>
+                `;
+            }
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function generateVideoResults() {
+            const container = document.getElementById('resultsContent');
+            let html = '<div class="video-results">';
+            
+            const durations = ['3:45', '12:30', '45:20', '1:20:00', '8:15', '15:30', '22:10', '5:45'];
+            for (let i = 0; i < 12; i++) {
+                html += `
+                    <div class="video-item" onclick="alert('播放视频')">
+                        <div class="video-thumb">
+                            ▶️
+                            <span class="video-duration">${durations[Math.floor(Math.random() * durations.length)]}</span>
+                        </div>
+                        <div class="video-title">${currentQuery} 视频教程 ${i + 1} - 完整指南与实战案例</div>
+                        <div class="video-meta">
+                            ${randomString(8)} • ${(Math.random() * 100).toFixed(0)}万次观看 • ${randomDate()}
+                        </div>
+                    </div>
+                `;
+            }
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function goHome() {
+            document.getElementById('homePage').style.display = 'flex';
+            document.getElementById('resultsPage').style.display = 'none';
+            document.getElementById('homeSearchBox').value = '';
+            document.getElementById('headerSearchBox').value = '';
+        }
+
+        function feelingLucky() {
+            const queries = ['github', 'youtube', '淘宝', 'python', 'react', '人工智能', '马斯克', '马云'];
+            const randomQuery = queries[Math.floor(Math.random() * queries.length)];
+            performSearch(randomQuery);
+        }
+
+        function changePage(page) {
+            document.querySelectorAll('.page-num').forEach(p => p.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // 模拟加载新页面
+            document.getElementById('resultsContent').innerHTML = '';
+            document.getElementById('loading').classList.add('active');
+            
+            setTimeout(() => {
+                document.getElementById('loading').classList.remove('active');
+                generateResults(currentQuery);
+            }, 500);
+        }
+
+        // 工具函数
+        function randomDate() {
+            const dates = ['1天前', '2天前', '1周前', '2周前', '1个月前', '2024年3月', '2024年2月', '2023年12月'];
+            return dates[Math.floor(Math.random() * dates.length)];
+        }
+
+        function randomString(length) {
+            const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+
+        function getRandomTitleSuffix() {
+            const suffixes = ['官方文档', '入门教程', '高级指南', '最佳实践', '常见问题', '最新版本', '下载中心', '社区论坛', 'API参考', '案例分析'];
+            return suffixes[Math.floor(Math.random() * suffixes.length)];
+        }
+
+        function getRandomDescription() {
+            const descs = [
+                '提供了详细的步骤说明和代码示例',
+                '包含视频教程和图文讲解',
+                '由行业专家撰写和审核',
+                '持续更新，保证内容时效性',
+                '适合初学者和高级用户',
+                '包含实战项目和练习',
+                '提供在线演示和源代码下载',
+                '涵盖最新技术和趋势'
+            ];
+            return descs[Math.floor(Math.random() * descs.length)];
+        }
+    </script>
+</body>
+</html>
